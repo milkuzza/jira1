@@ -67,7 +67,7 @@ export const StatusBadge: React.FC<{ status: IssueStatus }> = ({ status }) => {
 export const PriorityBadge: React.FC<{ priority: IssuePriority }> = ({ priority }) => {
   const color = PRIORITY_COLORS[priority] ?? 'var(--priority-none)';
   const labels: Record<IssuePriority, string> = {
-    URGENT: 'Urgent', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low', NONE: 'None',
+    HIGHEST: 'Highest', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low', LOWEST: 'Lowest',
   };
   return <Badge dot={color}>{labels[priority] ?? priority}</Badge>;
 };

@@ -51,10 +51,10 @@ export class IssueEntity {
 
   @Column({
     type: 'enum',
-    enum: ['BACKLOG', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'],
+    enum: ['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'],
     default: 'BACKLOG',
   })
-  status!: 'BACKLOG' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
+  status!: 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
 
   @Column({
     type: 'enum',

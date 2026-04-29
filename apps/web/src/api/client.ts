@@ -143,4 +143,14 @@ api.interceptors.response.use(
   },
 );
 
+export async function apiFetch<T = unknown>(url: string, options?: RequestInit): Promise<T> {
+  const config: import('axios').AxiosRequestConfig = {
+    url,
+    method: (options?.method as string) ?? 'GET',
+    data: options?.body ? JSON.parse(options.body as string) : undefined,
+  };
+  const response = await api(config);
+  return response.data as T;
+}
+
 export default api;
