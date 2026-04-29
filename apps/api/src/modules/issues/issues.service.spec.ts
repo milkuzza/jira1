@@ -146,8 +146,7 @@ describe('IssuesService', () => {
       const result = await service.move('issue-1', 'user-1', {
         newOrder: 2.5,
         newStatus: 'IN_PROGRESS',
-        columnId: 'col-1',
-      });
+      }, 'tenant-1');
 
       expect(result.order).toBe(2.5);
       expect(mockEventEmitter.emit).toHaveBeenCalled();
@@ -183,8 +182,7 @@ describe('IssuesService', () => {
       await service.move('issue-1', 'user-1', {
         newOrder: 1.0005,
         newStatus: 'IN_PROGRESS',
-        columnId: 'col-1',
-      });
+      }, 'tenant-1');
 
       // Rebalance should have been called and committed in a transaction
       expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();

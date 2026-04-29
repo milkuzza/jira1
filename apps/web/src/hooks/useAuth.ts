@@ -13,8 +13,9 @@ export function useAuth() {
     const tokens = await authApi.login({ email, password });
     // fetch user profile
     const user = await usersApi.getMe();
+    const tenant = store.tenant ?? { id: '', name: '', slug: '', plan: 'FREE' as const };
     store.setAuth(
-      { id: user.id, email: user.email, fullName: user.fullName, role: user.role, avatarUrl: user.avatarUrl },
+      { id: user.id, email: user.email, fullName: user.fullName, role: user.role, avatarUrl: user.avatarUrl, tenantId: tenant.id },
       tokens.accessToken,
       tokens.refreshToken,
       // tenant info from TenantMiddleware — host gives slug

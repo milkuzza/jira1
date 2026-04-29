@@ -35,7 +35,6 @@ export const IssueCard: React.FC<Props> = ({ issue, columnId, onClick }) => {
     data: {
       type: 'issue',
       columnId,
-      status: issue.status,
       ...issue,
     },
   });
