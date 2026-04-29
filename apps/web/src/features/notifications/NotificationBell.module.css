@@ -1,0 +1,110 @@
+/* apps/web/src/features/notifications/NotificationBell.module.css */
+
+.wrap { position: relative; }
+
+.btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 360px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 500;
+  overflow: hidden;
+  animation: slideInUp var(--transition-base) both;
+}
+
+.dropHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dropTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.markAll {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  cursor: pointer;
+}
+.markAll:hover { text-decoration: underline; }
+
+.list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.empty {
+  text-align: center;
+  padding: 32px 16px;
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+}
+
+.notif {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  width: 100%;
+  text-align: left;
+  transition: background var(--transition-fast);
+  border-bottom: 1px solid var(--color-border);
+}
+.notif:last-child { border-bottom: none; }
+.notif:hover { background: var(--color-surface); }
+
+.unread { background: var(--color-accent-subtle); }
+.unread:hover { background: var(--color-surface); }
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.dotVisible { background: var(--color-accent); }
+
+.notifBody { flex: 1; min-width: 0; }
+.notifText { font-size: var(--font-size-xs); color: var(--color-text); line-height: 1.4; }
+.notifTime { font-size: 10px; color: var(--color-muted); margin-top: 3px; }

@@ -1,0 +1,147 @@
+@startuml 06-usecase
+' docs/uml/06-usecase.puml
+' Use Case diagram — all system features grouped by boundary, actors with role inheritance.
+' Что показывает: все функции системы и минимальные роли для доступа к каждой.
+' Кому полезна: аналитикам, PM-ам и при проектировании RBAC.
+
+skinparam backgroundColor #FEFEFE
+skinparam usecase {
+    BackgroundColor #E8EAF6
+    BorderColor #333
+    FontSize 12
+}
+skinparam actor {
+    BackgroundColor #E3F2FD
+    BorderColor #333
+}
+skinparam rectangle {
+    BackgroundColor #F5F5F5
+    BorderColor #999
+    FontSize 14
+    FontStyle bold
+}
+
+' ─── Actors ───────────────────────────────
+
+actor "VIEWER" as Viewer
+actor "DEVELOPER" as Dev
+actor "PROJECT_MANAGER" as PM
+actor "ADMIN" as Admin
+
+Viewer <|-- Dev : inherits
+Dev <|-- PM : inherits
+PM <|-- Admin : inherits
+
+' ─── Tenant Management ────────────────────
+
+rectangle "Tenant Management" {
+    usecase "Register tenant" as UC_RegTenant
+    usecase "Update tenant settings" as UC_UpdTenant
+    usecase "View tenant info" as UC_ViewTenant
+}
+
+Admin --> UC_RegTenant
+Admin --> UC_UpdTenant
+Viewer --> UC_ViewTenant
+
+note right of UC_RegTenant : Public endpoint\n(no auth required)
+
+' ─── Project Management ───────────────────
+
+rectangle "Project Management" {
+    usecase "Create project" as UC_CreateProj
+    usecase "View projects" as UC_ViewProj
+    usecase "Update project" as UC_UpdProj
+    usecase "Delete project" as UC_DelProj
+    usecase "Manage board columns" as UC_ManageCols
+    usecase "Check plan limits" as UC_CheckPlan
+}
+
+PM --> UC_CreateProj
+Viewer --> UC_ViewProj
+PM --> UC_UpdProj
+Admin --> UC_DelProj
+PM --> UC_ManageCols
+
+UC_CreateProj ..> UC_CheckPlan : <<include>>
+
+note right of UC_CheckPlan : PlanGuard:\nFREE=3, PRO=20
+
+' ─── Issue Management ─────────────────────
+
+rectangle "Issue Management" {
+    usecase "Create issue" as UC_CreateIssue
+    usecase "View issues" as UC_ViewIssue
+    usecase "Update issue" as UC_UpdIssue
+    usecase "Delete issue" as UC_DelIssue
+    usecase "Move issue (DnD)" as UC_MoveIssue
+    usecase "Add comment" as UC_Comment
+    usecase "Upload attachment" as UC_Attach
+    usecase "Track changelog" as UC_Changelog
+}
+
+Dev --> UC_CreateIssue
+Viewer --> UC_ViewIssue
+Dev --> UC_UpdIssue
+PM --> UC_DelIssue
+Dev --> UC_MoveIssue
+Dev --> UC_Comment
+Dev --> UC_Attach
+
+UC_CreateIssue ..> UC_CheckPlan : <<include>>
+UC_UpdIssue ..> UC_Changelog : <<include>>
+UC_MoveIssue ..> UC_Changelog : <<include>>
+
+' ─── Sprint Management ────────────────────
+
+rectangle "Sprint Management" {
+    usecase "Create sprint" as UC_CreateSprint
+    usecase "Start sprint" as UC_StartSprint
+    usecase "Complete sprint" as UC_CompleteSprint
+    usecase "Move unfinished\nto backlog" as UC_Backlog
+}
+
+PM --> UC_CreateSprint
+PM --> UC_StartSprint
+PM --> UC_CompleteSprint
+
+UC_CompleteSprint ..> UC_Backlog : <<include>>
+UC_StartSprint ..> UC_Changelog : <<extends>>
+
+note right of UC_StartSprint : Validates no other\nactive sprint exists
+
+' ─── Search & Notifications ───────────────
+
+rectangle "Search & Notifications" {
+    usecase "Full-text search" as UC_Search
+    usecase "View notifications" as UC_ViewNotif
+    usecase "Mark as read" as UC_ReadNotif
+    usecase "Real-time updates (WS)" as UC_Realtime
+    usecase "Board presence" as UC_Presence
+}
+
+Viewer --> UC_Search
+Viewer --> UC_ViewNotif
+Viewer --> UC_ReadNotif
+Viewer --> UC_Realtime
+Viewer --> UC_Presence
+
+note right of UC_Search : Cmd+K CommandPalette\nts_rank + ILIKE
+
+' ─── User Management ─────────────────────
+
+rectangle "User Management" {
+    usecase "Invite user" as UC_Invite
+    usecase "Update profile" as UC_Profile
+    usecase "Upload avatar" as UC_Avatar
+    usecase "List users" as UC_ListUsers
+}
+
+Admin --> UC_Invite
+Viewer --> UC_Profile
+Viewer --> UC_Avatar
+Viewer --> UC_ListUsers
+
+UC_Invite ..> UC_CheckPlan : <<include>>
+
+@enduml

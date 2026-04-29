@@ -1,0 +1,70 @@
+/* apps/web/src/features/layout/Header.module.css */
+
+.header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.crumb {
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  transition: color var(--transition-fast);
+}
+.crumb:hover { color: var(--color-text); }
+.crumb:last-child { color: var(--color-text); font-weight: 500; }
+
+.sep { color: var(--color-muted-2); }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shortcutHint {
+  font-size: 10px;
+  color: var(--color-muted-2);
+}
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+}
+
+.localeBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.localeBtn:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}

@@ -1,0 +1,75 @@
+/* apps/web/src/components/ui/Button.module.css */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast), opacity var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Sizes */
+.sm { font-size: var(--font-size-sm); padding: 4px 10px; height: 28px; }
+.md { font-size: var(--font-size-base); padding: 6px 14px; height: 32px; }
+.lg { font-size: var(--font-size-md); padding: 8px 18px; height: 38px; }
+
+/* Variants */
+.primary {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: transparent;
+}
+.primary:hover { background: var(--color-accent-hover); }
+
+.ghost {
+  background: transparent;
+  color: var(--color-text);
+  border-color: transparent;
+}
+.ghost:hover { background: var(--color-surface-2); }
+
+.outline {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+.outline:hover { background: var(--color-surface); }
+
+.danger {
+  background: var(--color-danger);
+  color: #fff;
+  border-color: transparent;
+}
+.danger:hover { opacity: 0.85; }
+
+.dangerGhost {
+  background: transparent;
+  color: var(--color-danger);
+  border-color: transparent;
+}
+.dangerGhost:hover { background: var(--color-danger-subtle); }
+
+.loading {
+  position: relative;
+  color: transparent;
+}
+.loadingSpinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}

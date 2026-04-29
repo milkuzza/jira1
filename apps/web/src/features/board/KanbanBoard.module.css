@@ -1,0 +1,22 @@
+/* apps/web/src/features/board/KanbanBoard.module.css */
+
+.board {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  overflow-x: auto;
+  align-items: flex-start;
+  min-height: calc(100vh - var(--header-height) - 60px);
+}
+
+.viewerBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 0;
+}
+
+.viewerLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+}

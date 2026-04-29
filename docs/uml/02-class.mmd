@@ -1,0 +1,177 @@
+%% docs/uml/02-class.mmd
+%% NestJS Architecture Class Diagram — modules, services, controllers, guards.
+%% Что показывает: полную архитектуру бэкенда NestJS с зависимостями между компонентами.
+%% Кому полезна: backend-разработчикам для навигации по модулям и пониманию зависимостей.
+
+classDiagram
+
+    namespace AppModule {
+        class AppModule {
+            +configure(consumer) void
+        }
+        class TenantMiddleware {
+            +use(req, res, next) void
+        }
+    }
+
+    namespace AuthModule {
+        class AuthService {
+            +login(email, password, tenantId) Promise~TokenPair~
+            +refresh(refreshToken) Promise~TokenPair~
+            +logout(userId, tokenId) Promise~void~
+        }
+        class AuthController {
+            +login(dto) Promise~TokenPair~
+            +refresh(dto) Promise~TokenPair~
+            +logout(user) Promise~void~
+        }
+        class JwtStrategy {
+            +validate(payload) JwtUser
+        }
+        class JwtAuthGuard {
+            +canActivate(context) boolean
+        }
+    }
+
+    namespace TenantsModule {
+        class TenantsService {
+            +register(dto) Promise~Tenant~
+            +findBySlug(slug) Promise~Tenant~
+            +update(id, dto) Promise~Tenant~
+        }
+        class TenantsController {
+            +register(dto) Promise~Tenant~
+            +getMe(user) Promise~Tenant~
+            +update(user, dto) Promise~Tenant~
+        }
+    }
+
+    namespace UsersModule {
+        class UsersService {
+            +getMe(userId) Promise~User~
+            +updateMe(userId, dto) Promise~User~
+            +invite(tenantId, dto) Promise~InviteResult~
+            +list(tenantId) Promise~UserListItem[]~
+            +generateAvatarPresignedUrl(userId) Promise~AvatarPresignResult~
+        }
+        class UsersController {
+            +getMe(user) Promise~User~
+            +invite(user, dto) Promise~InviteResult~
+        }
+    }
+
+    namespace ProjectsModule {
+        class ProjectsService {
+            +create(tenantId, dto) Promise~Project~
+            +findAll(tenantId) Promise~Project[]~
+            +getBoard(projectId) Promise~BoardColumnWithIssues[]~
+            +addColumn(projectId, dto) Promise~BoardColumn~
+        }
+        class SprintsService {
+            +create(projectId, dto) Promise~Sprint~
+            +start(sprintId) Promise~Sprint~
+            +complete(sprintId) Promise~Sprint~
+        }
+        class ProjectsController {
+            +create(user, dto) Promise~Project~
+            +getBoard(projectId) Promise~BoardColumnWithIssues[]~
+        }
+    }
+
+    namespace IssuesModule {
+        class IssuesService {
+            +create(projectId, reporterId, dto) Promise~Issue~
+            +findAll(projectId, filters, cursor) Promise~CursorPage~
+            +update(issueId, userId, dto) Promise~Issue~
+            +move(issueId, userId, dto) Promise~Issue~
+            +addComment(issueId, userId, dto) Promise~Comment~
+            +createAttachmentPresign(issueId, userId, dto) Promise~Presign~
+        }
+        class IssuesController {
+            +create(projectId, user, dto) Promise~Issue~
+            +move(issueId, user, dto) Promise~Issue~
+        }
+        class IssuesGateway {
+            -viewersMap Map
+            -socketMeta Map
+            +handleJoinProject(client, payload) void
+            +handleDisconnect(client) void
+            +emitToUser(userId, tenantId, event, data) void
+        }
+    }
+
+    namespace SearchModule {
+        class SearchService {
+            +search(tenantId, userId, query, projectId) Promise~SearchResponse~
+            +trackRecentView(userId, issueId) Promise~void~
+        }
+        class SearchController {
+            +search(user, q, projectId) Promise~SearchResponse~
+        }
+    }
+
+    namespace NotificationsModule {
+        class NotificationsService {
+            +handleIssueAssigned(payload) Promise~void~
+            +handleIssueCommented(payload) Promise~void~
+            +handleStatusChanged(payload) Promise~void~
+            +handleSprintStarted(payload) Promise~void~
+            +findAll(userId) Promise~Notification[]~
+            +markRead(notifId, userId) Promise~void~
+            +getUnreadCount(userId) Promise~count~
+        }
+        class NotificationsController {
+            +findAll(user) Promise~Notification[]~
+            +getUnreadCount(user) Promise~count~
+            +markRead(id, user) Promise~void~
+            +markAllRead(user) Promise~void~
+        }
+    }
+
+    namespace BillingModule {
+        class PlanLimitsService {
+            +checkLimit(tenantId, resource) Promise~void~
+        }
+        class PlanGuard {
+            +canActivate(context) Promise~boolean~
+        }
+        class PlanLimitExceededException {
+            +constructor(resource, current, limit)
+        }
+    }
+
+    namespace HealthModule {
+        class HealthService {
+            +check() Promise~HealthStatus~
+        }
+        class HealthController {
+            +check() Promise~HealthStatus~
+        }
+    }
+
+    namespace Guards {
+        class RolesGuard {
+            +canActivate(context) boolean
+        }
+    }
+
+    %% ─── Dependencies ─────────────────────────────
+
+    AuthController --> AuthService
+    TenantsController --> TenantsService
+    UsersController --> UsersService
+    ProjectsController --> ProjectsService
+    ProjectsController --> SprintsService
+    IssuesController --> IssuesService
+    SearchController --> SearchService
+    NotificationsController --> NotificationsService
+    HealthController --> HealthService
+
+    AuthService --> JwtStrategy : uses
+    IssuesService --> IssuesGateway : emits events
+    NotificationsService --> IssuesGateway : emitToUser()
+    PlanGuard --> PlanLimitsService : checkLimit()
+
+    AppModule --> TenantMiddleware : applies globally
+    AppModule --> JwtAuthGuard : APP_GUARD
+    AppModule --> RolesGuard : APP_GUARD

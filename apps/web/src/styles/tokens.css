@@ -1,0 +1,205 @@
+/* apps/web/src/styles/tokens.css */
+/* Design tokens — Linear-inspired palette with first-class light & dark modes. */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Light theme (default)
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* ─── Colors ─── */
+  --color-bg:           #ffffff;
+  --color-surface:      #fafaf9;
+  --color-surface-2:    #f3f3f1;
+  --color-surface-3:    #ebebe8;
+  --color-border:       #e7e7e3;
+  --color-border-2:     #d4d4cf;
+  --color-text:         #1a1a1a;
+  --color-text-2:       #3f3f3d;
+  --color-muted:        #6b6b68;
+  --color-muted-2:      #9b9b98;
+
+  --color-accent:       #5e6ad2;
+  --color-accent-hover: #4f5abf;
+  --color-accent-active:#414cb0;
+  --color-accent-fg:    #ffffff;
+  --color-accent-subtle:#eef0fb;
+
+  --color-danger:        #e5484d;
+  --color-danger-hover:  #d33a40;
+  --color-danger-subtle: #fef1f1;
+  --color-success:       #299764;
+  --color-success-subtle:#eaf7f0;
+  --color-warning:       #f5a623;
+  --color-warning-subtle:#fdf3e0;
+
+  --color-overlay:       rgba(15, 15, 20, 0.45);
+
+  /* ─── Priority Colors ─── */
+  --priority-urgent:  #e5484d;
+  --priority-high:    #f76b15;
+  --priority-medium:  #f5a623;
+  --priority-low:     #6b6b68;
+  --priority-none:    #d9d9d9;
+
+  /* ─── Status Colors ─── */
+  --status-backlog:     #6b6b68;
+  --status-todo:        #6b6b68;
+  --status-in-progress: #5e6ad2;
+  --status-in-review:   #f5a623;
+  --status-done:        #299764;
+  --status-cancelled:   #d9d9d9;
+
+  /* ─── Typography ─── */
+  --font-sans:      'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:      'JetBrains Mono', 'Fira Code', monospace;
+  --font-size-xs:   11px;
+  --font-size-sm:   12px;
+  --font-size-base: 13px;
+  --font-size-md:   14px;
+  --font-size-lg:   16px;
+  --font-size-xl:   20px;
+  --font-size-2xl:  24px;
+  --line-height:    1.5;
+
+  /* ─── Spacing ─── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* ─── Radius ─── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-full: 9999px;
+
+  /* ─── Shadows ─── */
+  --shadow-xs:  0 1px 2px rgba(15, 15, 20, 0.06);
+  --shadow-sm:  0 1px 3px rgba(15, 15, 20, 0.08), 0 0 1px rgba(15, 15, 20, 0.04);
+  --shadow-md:  0 4px 14px rgba(15, 15, 20, 0.10), 0 0 1px rgba(15, 15, 20, 0.04);
+  --shadow-lg:  0 10px 30px rgba(15, 15, 20, 0.12), 0 0 1px rgba(15, 15, 20, 0.04);
+  --shadow-xl:  0 20px 50px rgba(15, 15, 20, 0.16), 0 0 1px rgba(15, 15, 20, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(94, 106, 210, 0.25);
+
+  /* ─── Layout ─── */
+  --sidebar-width:  220px;
+  --header-height:  44px;
+
+  /* ─── Transitions ─── */
+  --transition-fast:  80ms ease;
+  --transition-base:  150ms ease;
+  --transition-slow:  250ms ease;
+
+  color-scheme: light;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Dark theme (explicit opt-in via <html data-theme="dark">)
+   ───────────────────────────────────────────────────────────────────────────── */
+:root[data-theme='dark'] {
+  --color-bg:           #0d0d10;
+  --color-surface:      #16161a;
+  --color-surface-2:    #1d1d22;
+  --color-surface-3:    #26262c;
+  --color-border:       #26262c;
+  --color-border-2:     #34343b;
+  --color-text:         #ececea;
+  --color-text-2:       #c5c5c1;
+  --color-muted:        #8b8b88;
+  --color-muted-2:      #5d5d5a;
+
+  --color-accent:       #7d8aff;
+  --color-accent-hover: #8f9aff;
+  --color-accent-active:#a4adff;
+  --color-accent-fg:    #ffffff;
+  --color-accent-subtle:rgba(125, 138, 255, 0.14);
+
+  --color-danger:        #f0656a;
+  --color-danger-hover:  #f47a7e;
+  --color-danger-subtle: rgba(240, 101, 106, 0.12);
+  --color-success:       #4cc38a;
+  --color-success-subtle:rgba(76, 195, 138, 0.12);
+  --color-warning:       #f5b740;
+  --color-warning-subtle:rgba(245, 183, 64, 0.12);
+
+  --color-overlay:       rgba(0, 0, 0, 0.6);
+
+  --priority-urgent:     #f0656a;
+  --priority-high:       #ff8a3c;
+  --priority-medium:     #f5b740;
+  --priority-low:        #8b8b88;
+  --priority-none:       #34343b;
+
+  --status-backlog:      #8b8b88;
+  --status-todo:         #8b8b88;
+  --status-in-progress:  #7d8aff;
+  --status-in-review:    #f5b740;
+  --status-done:         #4cc38a;
+  --status-cancelled:    #34343b;
+
+  --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.3);
+  --shadow-md:  0 6px 18px rgba(0, 0, 0, 0.55), 0 0 1px rgba(0, 0, 0, 0.3);
+  --shadow-lg:  0 12px 36px rgba(0, 0, 0, 0.6), 0 0 1px rgba(0, 0, 0, 0.3);
+  --shadow-xl:  0 24px 60px rgba(0, 0, 0, 0.65), 0 0 1px rgba(0, 0, 0, 0.4);
+  --shadow-focus: 0 0 0 3px rgba(125, 138, 255, 0.32);
+
+  color-scheme: dark;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   System preference fallback for first paint (before JS sets data-theme).
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg:           #0d0d10;
+    --color-surface:      #16161a;
+    --color-surface-2:    #1d1d22;
+    --color-surface-3:    #26262c;
+    --color-border:       #26262c;
+    --color-border-2:     #34343b;
+    --color-text:         #ececea;
+    --color-text-2:       #c5c5c1;
+    --color-muted:        #8b8b88;
+    --color-muted-2:      #5d5d5a;
+
+    --color-accent:       #7d8aff;
+    --color-accent-hover: #8f9aff;
+    --color-accent-active:#a4adff;
+    --color-accent-subtle:rgba(125, 138, 255, 0.14);
+
+    --color-danger:        #f0656a;
+    --color-danger-hover:  #f47a7e;
+    --color-danger-subtle: rgba(240, 101, 106, 0.12);
+    --color-success:       #4cc38a;
+    --color-success-subtle:rgba(76, 195, 138, 0.12);
+    --color-warning:       #f5b740;
+    --color-warning-subtle:rgba(245, 183, 64, 0.12);
+
+    --color-overlay:       rgba(0, 0, 0, 0.6);
+
+    --priority-none:       #34343b;
+    --status-cancelled:    #34343b;
+
+    --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.5), 0 0 1px rgba(0, 0, 0, 0.3);
+    --shadow-md:  0 6px 18px rgba(0, 0, 0, 0.55), 0 0 1px rgba(0, 0, 0, 0.3);
+    --shadow-lg:  0 12px 36px rgba(0, 0, 0, 0.6), 0 0 1px rgba(0, 0, 0, 0.3);
+    --shadow-xl:  0 24px 60px rgba(0, 0, 0, 0.65), 0 0 1px rgba(0, 0, 0, 0.4);
+    --shadow-focus: 0 0 0 3px rgba(125, 138, 255, 0.32);
+
+    color-scheme: dark;
+  }
+}
+
+/* Smooth color transitions when switching themes (skip transforms/layout) */
+html, body, button, input, select, textarea, a {
+  transition:
+    background-color var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base);
+}

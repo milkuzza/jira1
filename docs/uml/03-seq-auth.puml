@@ -1,0 +1,111 @@
+@startuml 03-seq-auth
+' docs/uml/03-seq-auth.puml
+' Sequence diagram: Login + Refresh Token Rotation + Protected Request with RLS.
+' Что показывает: три флоу аутентификации — логин, ротацию refresh-токенов с reuse detection, и запрос с RLS.
+' Кому полезна: backend-разработчикам и security-аудиторам.
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+skinparam sequence {
+    ArrowColor #333
+    LifeLineBorderColor #666
+    ParticipantBorderColor #333
+    ParticipantBackgroundColor #E8EAF6
+    ParticipantFontSize 13
+    NoteBackgroundColor #FFF9C4
+}
+
+participant "Browser" as Browser #E3F2FD
+participant "Traefik" as Traefik #F3E5F5
+participant "NestJS API" as API #E8F5E9
+database "PostgreSQL\n(RLS)" as DB #FFF3E0
+database "Redis" as Redis #FFEBEE
+
+== Flow 1 — Login ==
+
+Browser -> API : POST /auth/login\n{ email, password, tenantSlug }
+activate API
+
+API -> DB : SELECT * FROM users\nWHERE email = $email\nAND tenant_id = (SELECT id FROM tenants WHERE slug = $slug)
+DB --> API : user { id, passwordHash, role, tenantId }
+
+API -> API : bcrypt.compare(password, passwordHash)
+
+alt password invalid
+    API --> Browser : 401 { message: "Invalid credentials" }
+else password valid
+    API -> API : sign accessToken (JWT, 15min)\nsub=userId, tenantId, role
+    API -> API : sign refreshToken (JWT, 30d)\nsub=userId, tokenId=uuid
+    API -> Redis : SET refresh:{userId}:{tokenId}\nvalue={ used: false }\nEX 2592000 (30 days)
+    Redis --> API : OK
+    API --> Browser : 200 { accessToken, refreshToken, user }
+end
+
+deactivate API
+
+== Flow 2 — Refresh Token Rotation ==
+
+Browser -> API : POST /auth/refresh\n{ refreshToken }
+activate API
+
+API -> API : jwt.verify(refreshToken)\nextract: userId, tokenId
+
+API -> Redis : GET refresh:{userId}:{tokenId}
+Redis --> API : tokenData
+
+alt token not found (expired/revoked)
+    API --> Browser : 401 { code: "TOKEN_EXPIRED" }
+else token.used === true (REUSE DETECTED!)
+    note right of API #FFCDD2
+        Compromised token!
+        Wipe all sessions.
+    end note
+    API -> Redis : DEL refresh:{userId}:*\n(all sessions for user)
+    Redis --> API : OK
+    API --> Browser : 401 { code: "TOKEN_REUSE_DETECTED" }
+else token.used === false (valid)
+    API -> Redis : SET refresh:{userId}:{tokenId}\nvalue={ used: true }
+    note right of Redis : Mark old token as used
+    Redis --> API : OK
+
+    API -> API : sign NEW accessToken (15min)
+    API -> API : sign NEW refreshToken (30d)\nnew tokenId=uuid
+
+    API -> Redis : SET refresh:{userId}:{newTokenId}\nvalue={ used: false }\nEX 2592000
+    Redis --> API : OK
+
+    API --> Browser : 200 { accessToken, refreshToken }
+end
+
+deactivate API
+
+== Flow 3 — Protected Request with RLS ==
+
+Browser -> Traefik : GET /projects\nAuthorization: Bearer {accessToken}
+Traefik -> API : forward (api.app.localhost → :3000)
+activate API
+
+API -> API : JwtAuthGuard: verify JWT\nextract { sub, tenantId, role }
+
+API -> API : TenantMiddleware:\nextract tenantId from JWT payload
+
+API -> DB : SELECT set_config(\n'app.tenant_id', '{tenantId}', true)
+note right of DB #E8F5E9
+    RLS now active:
+    all queries auto-filter
+    by tenant_id
+end note
+DB --> API : OK
+
+API -> DB : SELECT * FROM projects
+note right of DB : RLS policy filters:\nWHERE tenant_id = app.tenant_id
+DB --> API : [ ...tenant-scoped projects ]
+
+API --> Traefik : 200 [ ...projects ]
+Traefik --> Browser : [ ...projects ]
+
+deactivate API
+
+@enduml

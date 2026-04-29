@@ -1,0 +1,88 @@
+@startuml 04-seq-dragdrop
+' docs/uml/04-seq-dragdrop.puml
+' Sequence diagram: Kanban drag-and-drop with optimistic updates and WebSocket sync.
+' Что показывает: полный флоу перетаскивания задачи с оптимистичным обновлением, WS broadcast и откатом при ошибке.
+' Кому полезна: frontend- и backend-разработчикам для понимания real-time синхронизации.
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+skinparam sequence {
+    ArrowColor #333
+    LifeLineBorderColor #666
+    ParticipantBorderColor #333
+    ParticipantBackgroundColor #E8EAF6
+    ParticipantFontSize 13
+    NoteBackgroundColor #FFF9C4
+}
+
+actor "User A\n(dragging)" as UserA #E3F2FD
+actor "User B\n(viewing)" as UserB #F3E5F5
+participant "NestJS API" as API #E8F5E9
+database "PostgreSQL" as DB #FFF3E0
+participant "Socket.IO\nGateway" as WS #FFEBEE
+
+== Drag & Drop Flow ==
+
+UserA -> UserA : onDragEnd:\ncalculate newOrder = midpoint(prev, next)\nnewStatus = target column status
+
+UserA -> UserA : React Query:\noptimistic update (instant)
+note right of UserA #C8E6C9
+    UI updates immediately.
+    Card moves to new column.
+    No network delay visible.
+end note
+
+UserA -> API : PATCH /issues/{id}/order\n{ newOrder, newStatus, columnId }
+activate API
+
+API -> DB : UPDATE issues\nSET "order" = $newOrder,\n    status = $newStatus\nWHERE id = $issueId
+DB --> API : OK (1 row)
+
+API -> DB : INSERT INTO issue_changelog\n{ field: 'status', old_value, new_value }
+DB --> API : OK
+
+API -> API : Check: |newOrder - neighborOrder| < 0.001?
+
+alt order gap too small → REBALANCE
+    API -> DB : SELECT id, "order" FROM issues\nWHERE project_id = $pid AND status = $status\nORDER BY "order" ASC
+    DB --> API : all issues in column
+    API -> DB : BEGIN TRANSACTION
+    API -> DB : UPDATE issues SET "order" = 1.0 WHERE id = 'a'\nUPDATE issues SET "order" = 2.0 WHERE id = 'b'\n... (reassign integer orders)
+    API -> DB : COMMIT
+    DB --> API : OK
+end
+
+alt success
+    API -> WS : EventEmitter.emit('issue.moved',\n{ issueId, newStatus, newOrder, movedBy, projectId })
+    activate WS
+    WS -> WS : find rooms matching\nproject:{projectId}:tenant:*
+    WS -> UserB : emit 'issue:moved'\n{ issueId, newStatus, newOrder, movedBy }
+    deactivate WS
+
+    UserB -> UserB : queryClient.setQueryData:\napply move in board cache
+    note right of UserB #E3F2FD
+        User B sees the card
+        move in real-time.
+    end note
+
+    API --> UserA : 200 OK { ...updatedIssue }
+    UserA -> UserA : React Query: confirm\n(cache already matches)
+
+else error (DB conflict / constraint violation)
+    API --> UserA : 409 Conflict\n{ message: "Order conflict" }
+    UserA -> UserA : useMoveIssue.onError:\nqueryClient.invalidateQueries(['board', projectId])
+    note right of UserA #FFCDD2
+        Optimistic update rolled back.
+        Board refetched from server.
+    end note
+    UserA -> API : GET /projects/{id}/board
+    API -> DB : SELECT columns + issues
+    DB --> API : fresh board data
+    API --> UserA : 200 { columns: [...] }
+end
+
+deactivate API
+
+@enduml

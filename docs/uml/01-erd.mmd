@@ -1,0 +1,154 @@
+%% docs/uml/01-erd.mmd
+%% Entity Relationship Diagram — all tables from init.sql with types and FK relations.
+%% Что показывает: полную схему БД со всеми таблицами, полями, типами и связями.
+%% Кому полезна: разработчикам, DBA, новым членам команды для понимания модели данных.
+
+erDiagram
+
+    tenants {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        varchar(255) name "NOT NULL"
+        varchar(63) slug "NOT NULL UNIQUE"
+        plan_type plan "NOT NULL DEFAULT FREE — FREE|BASIC|PRO|ENTERPRISE"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+    }
+
+    users {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid tenant_id FK "NOT NULL → tenants(id) ON DELETE CASCADE"
+        varchar(255) email "NOT NULL (UNIQUE per tenant)"
+        varchar(255) password_hash "NOT NULL"
+        varchar(255) full_name "NOT NULL DEFAULT ''"
+        user_role role "NOT NULL DEFAULT DEVELOPER — ADMIN|PROJECT_MANAGER|DEVELOPER|VIEWER"
+        varchar(512) avatar_url "NULLABLE"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+        timestamptz updated_at "NOT NULL DEFAULT NOW()"
+    }
+
+    projects {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid tenant_id FK "NOT NULL → tenants(id) ON DELETE CASCADE"
+        varchar(255) name "NOT NULL"
+        varchar(10) key "NOT NULL (UNIQUE per tenant)"
+        text description "NULLABLE"
+        board_type board_type "NOT NULL DEFAULT KANBAN — KANBAN|SCRUM"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+    }
+
+    board_columns {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid project_id FK "NOT NULL → projects(id) ON DELETE CASCADE"
+        varchar(100) name "NOT NULL"
+        int order "NOT NULL DEFAULT 0"
+        varchar(7) color "NOT NULL DEFAULT #6B7280"
+    }
+
+    sprints {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid project_id FK "NOT NULL → projects(id) ON DELETE CASCADE"
+        varchar(255) name "NOT NULL"
+        text goal "NULLABLE"
+        date start_date "NULLABLE"
+        date end_date "NULLABLE"
+        sprint_status status "NOT NULL DEFAULT PLANNED — PLANNED|ACTIVE|COMPLETED"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+    }
+
+    issues {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid tenant_id FK "NOT NULL → tenants(id) ON DELETE CASCADE"
+        uuid project_id FK "NOT NULL → projects(id) ON DELETE CASCADE"
+        uuid sprint_id FK "NULLABLE → sprints(id) ON DELETE SET NULL"
+        uuid parent_id FK "NULLABLE → issues(id) ON DELETE SET NULL (self-ref)"
+        varchar(500) title "NOT NULL"
+        text description "NULLABLE"
+        issue_status status "NOT NULL DEFAULT BACKLOG — BACKLOG|TODO|IN_PROGRESS|IN_REVIEW|DONE|CANCELLED"
+        issue_priority priority "NOT NULL DEFAULT MEDIUM — LOWEST|LOW|MEDIUM|HIGH|HIGHEST"
+        uuid assignee_id FK "NULLABLE → users(id) ON DELETE SET NULL"
+        uuid reporter_id FK "NOT NULL → users(id) ON DELETE RESTRICT"
+        int story_points "NULLABLE"
+        date due_date "NULLABLE"
+        double_precision order "NOT NULL DEFAULT 0"
+        tsvector search_vector "NULLABLE (auto-updated by trigger)"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+        timestamptz updated_at "NOT NULL DEFAULT NOW()"
+    }
+
+    issue_comments {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid issue_id FK "NOT NULL → issues(id) ON DELETE CASCADE"
+        uuid user_id FK "NOT NULL → users(id) ON DELETE CASCADE"
+        text body "NOT NULL"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+    }
+
+    issue_attachments {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid issue_id FK "NOT NULL → issues(id) ON DELETE CASCADE"
+        uuid user_id FK "NOT NULL → users(id) ON DELETE CASCADE"
+        varchar(255) filename "NOT NULL"
+        varchar(512) url "NOT NULL"
+        bigint size "NOT NULL DEFAULT 0"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+    }
+
+    issue_changelog {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid issue_id FK "NOT NULL → issues(id) ON DELETE CASCADE"
+        uuid user_id FK "NOT NULL → users(id) ON DELETE CASCADE"
+        varchar(100) field "NOT NULL"
+        text old_value "NULLABLE"
+        text new_value "NULLABLE"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+    }
+
+    labels {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid tenant_id FK "NOT NULL → tenants(id) ON DELETE CASCADE"
+        varchar(100) name "NOT NULL"
+        varchar(7) color "NOT NULL DEFAULT #3B82F6"
+    }
+
+    issue_labels {
+        uuid issue_id FK_PK "NOT NULL → issues(id) ON DELETE CASCADE"
+        uuid label_id FK_PK "NOT NULL → labels(id) ON DELETE CASCADE"
+    }
+
+    notifications {
+        uuid id PK "DEFAULT uuid_generate_v4()"
+        uuid user_id FK "NOT NULL → users(id) ON DELETE CASCADE"
+        uuid tenant_id FK "NOT NULL → tenants(id) ON DELETE CASCADE"
+        notification_type type "NOT NULL — ISSUE_ASSIGNED|ISSUE_UPDATED|COMMENT_ADDED|MENTION|SPRINT_STARTED|SPRINT_COMPLETED"
+        jsonb payload "NOT NULL DEFAULT {}"
+        boolean read "NOT NULL DEFAULT FALSE"
+        timestamptz created_at "NOT NULL DEFAULT NOW()"
+    }
+
+    %% ─── Relationships ───────────────────────────────
+
+    tenants ||--o{ users : "has"
+    tenants ||--o{ projects : "has"
+    tenants ||--o{ issues : "has"
+    tenants ||--o{ labels : "has"
+    tenants ||--o{ notifications : "has"
+
+    projects ||--o{ board_columns : "has"
+    projects ||--o{ sprints : "has"
+    projects ||--o{ issues : "contains"
+
+    sprints ||--o{ issues : "holds"
+
+    issues ||--o{ issue_comments : "has"
+    issues ||--o{ issue_attachments : "has"
+    issues ||--o{ issue_changelog : "has"
+    issues ||--o{ issue_labels : "tagged"
+    issues }o--o| issues : "parent (self-ref)"
+
+    labels ||--o{ issue_labels : "applied"
+
+    users ||--o{ issues : "reports"
+    users }o--o{ issues : "assigned"
+    users ||--o{ issue_comments : "writes"
+    users ||--o{ issue_attachments : "uploads"
+    users ||--o{ issue_changelog : "changes"
+    users ||--o{ notifications : "receives"

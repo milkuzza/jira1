@@ -1,0 +1,130 @@
+@startuml 07-activity-issue
+' docs/uml/07-activity-issue.puml
+' Activity diagram: Issue lifecycle with swimlanes — status transitions, roles, events.
+' Что показывает: полный жизненный цикл задачи со всеми переходами статусов, ролями и WS-событиями.
+' Кому полезна: разработчикам, PM-ам, и для онбординга новых участников проекта.
+
+skinparam backgroundColor #FEFEFE
+skinparam activity {
+    BackgroundColor #E8EAF6
+    BorderColor #333
+    FontSize 12
+}
+skinparam swimlane {
+    BorderColor #333
+    TitleFontSize 14
+}
+
+|DEVELOPER|
+|PROJECT_MANAGER|
+|SYSTEM|
+
+|DEVELOPER|
+start
+
+:Create issue\n(POST /issues);
+note right
+  Status = **BACKLOG**
+  emit: issue.created
+  WS: issue:created
+  changelog: status → BACKLOG
+end note
+
+|DEVELOPER|
+:Assign to sprint\n(if sprint exists);
+
+if (Sprint assigned?) then (yes)
+    :Status → **TODO**;
+    note right : changelog: status BACKLOG → TODO
+else (no)
+    :Stays in **BACKLOG**;
+endif
+
+|DEVELOPER|
+:Pick up task\n(self-assign);
+:Status → **IN_PROGRESS**;
+note right
+  emit: issue.assigned
+  emit: issue.status_changed
+  WS: issue:updated
+  changelog: status → IN_PROGRESS
+  changelog: assigneeId → userId
+end note
+
+|DEVELOPER|
+:Work on implementation;
+
+:Submit for review;
+:Status → **IN_REVIEW**;
+note right
+  emit: issue.status_changed
+  WS: issue:updated
+  changelog: status → IN_REVIEW
+end note
+
+|PROJECT_MANAGER|
+if (Review passed?) then (approved)
+
+    :Status → **DONE**;
+    note right
+      emit: issue.status_changed
+      WS: issue:updated
+      changelog: status → DONE
+      Notification → reporter
+    end note
+
+else (needs work)
+
+    |PROJECT_MANAGER|
+    :Return to developer;
+    :Status → **IN_PROGRESS**;
+    note right
+      changelog: status IN_REVIEW → IN_PROGRESS
+      WS: issue:updated
+    end note
+
+    |DEVELOPER|
+    :Rework implementation;
+    :Status → **IN_REVIEW**;
+    note left : Back to review cycle
+
+    |PROJECT_MANAGER|
+    :Re-review;
+    :Status → **DONE**;
+
+endif
+
+|PROJECT_MANAGER|
+if (Cancel requested?) then (yes)
+    :Status → **CANCELLED**;
+    note right
+      Only PM or ADMIN
+      ANY status → CANCELLED
+      emit: issue.status_changed
+      WS: issue:updated
+      changelog: status → CANCELLED
+    end note
+else (no)
+endif
+
+|SYSTEM|
+if (Sprint completed?) then (yes)
+    if (Issue status != DONE\nand status != CANCELLED?) then (yes)
+        :Move to **BACKLOG**;
+        note right
+          SprintsService.complete()
+          Unfinished issues → BACKLOG
+          sprintId → null
+          changelog: status → BACKLOG
+          changelog: sprintId → null
+        end note
+    else (no)
+        :Issue stays in **DONE**;
+    endif
+else (no)
+endif
+
+|SYSTEM|
+stop
+
+@enduml

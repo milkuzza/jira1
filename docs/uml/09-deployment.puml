@@ -1,0 +1,129 @@
+@startuml 09-deployment
+' docs/uml/09-deployment.puml
+' Deployment diagram — Docker containers, networks, volumes, ports.
+' Что показывает: физическое развёртывание всех контейнеров с сетями, томами и портами.
+' Кому полезна: DevOps-инженерам и для онбординга разработчиков (docker compose up).
+
+skinparam backgroundColor #FEFEFE
+skinparam node {
+    BackgroundColor #F5F5F5
+    BorderColor #666
+    FontSize 12
+}
+skinparam artifact {
+    BackgroundColor #E8EAF6
+    BorderColor #333
+}
+skinparam database {
+    BackgroundColor #FFF3E0
+    BorderColor #333
+}
+skinparam component {
+    BackgroundColor #E3F2FD
+}
+
+node "Home Server (Linux)" as Server {
+
+    node "Docker network: traefik_net" as TraefikNet {
+        artifact "traefik:v3" as Traefik {
+            component ":80 HTTP" as T80
+            component ":8080 Dashboard" as T8080
+            note right
+                Auto-discovery via Docker labels.
+                Subdomain routing:
+                  app.localhost → web:5173
+                  api.app.localhost → api:3000
+                  adminer.app.localhost → adminer:8080
+                  minio.app.localhost → minio:9001
+            end note
+        }
+    }
+
+    node "Docker network: app_net" as AppNet {
+        artifact "nestjs-api\n(node:20-alpine)" as API {
+            component ":3000 HTTP + WS" as A3000
+            note right
+                Connected to:
+                  app_net (receives traffic)
+                  data_net (accesses DB/Redis/MinIO)
+            end note
+        }
+
+        artifact "react-web\n(node:20-alpine + Vite)" as Web {
+            component ":5173 dev server" as W5173
+            note right
+                Connected to:
+                  app_net only
+                SPA served via Vite dev server.
+                API calls proxied via Traefik.
+            end note
+        }
+    }
+
+    node "Docker network: data_net" as DataNet {
+        database "postgres:16-alpine" as PG {
+            component ":5432 TCP" as PG5432
+            storage "pgdata → /var/lib/postgresql/data" as PGVol
+            note right
+                Database: taskmanager_db
+                RLS enabled on all tables.
+                Extensions: uuid-ossp, pg_trgm
+            end note
+        }
+
+        database "redis:7-alpine" as Redis {
+            component ":6379 TCP" as R6379
+            storage "redisdata → /data" as RedisVol
+            note right
+                Stores: refresh tokens,
+                plan limit counters,
+                tenant slug cache,
+                recent issue views.
+            end note
+        }
+
+        artifact "minio/minio" as MinIO {
+            component ":9000 S3 API" as M9000
+            component ":9001 Console" as M9001
+            storage "miniodata → /data" as MinIOVol
+            note right
+                Buckets: attachments, avatars.
+                Console accessible via
+                minio.app.localhost:9001
+            end note
+        }
+    }
+
+    node "Docker profile: dev" as DevTools {
+        artifact "adminer" as Adminer {
+            component ":8081 HTTP" as Adm8081
+            note right
+                Connected to: data_net
+                Only started with --profile dev
+                adminer.app.localhost → :8081
+            end note
+        }
+    }
+}
+
+' ─── Network Connections ──────────────────
+
+Traefik -[#2196F3]-> API : HTTP / WS forward
+Traefik -[#2196F3]-> Web : HTTP forward
+Traefik -[#9E9E9E]-> Adminer : HTTP forward\n(dev only)
+
+API -[#4CAF50]-> PG : TCP :5432\n(TypeORM)
+API -[#F44336]-> Redis : TCP :6379\n(ioredis)
+API -[#FF9800]-> MinIO : HTTP :9000\n(MinIO SDK)
+
+Adminer -[#9E9E9E]-> PG : TCP :5432
+
+note bottom of Server
+    **Network visibility:**
+    traefik_net: Traefik ↔ app_net services
+    app_net: API, Web (+ Traefik bridged)
+    data_net: PG, Redis, MinIO, API, Adminer
+    Web has NO access to data_net.
+end note
+
+@enduml

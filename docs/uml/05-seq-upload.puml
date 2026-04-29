@@ -1,0 +1,70 @@
+@startuml 05-seq-upload
+' docs/uml/05-seq-upload.puml
+' Sequence diagram: File upload via presigned URL (Browser → MinIO direct upload).
+' Что показывает: трёхшаговый процесс загрузки файла: presign → direct upload → confirm.
+' Кому полезна: backend- и frontend-разработчикам для интеграции с MinIO/S3.
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+skinparam sequence {
+    ArrowColor #333
+    LifeLineBorderColor #666
+    ParticipantBorderColor #333
+    ParticipantBackgroundColor #E8EAF6
+    ParticipantFontSize 13
+    NoteBackgroundColor #FFF9C4
+}
+
+participant "Browser" as Browser #E3F2FD
+participant "NestJS API" as API #E8F5E9
+participant "MinIO\n(S3-compatible)" as MinIO #F3E5F5
+database "PostgreSQL" as DB #FFF3E0
+
+== Step 1 — Request Presigned URL ==
+
+Browser -> API : POST /issues/{id}/attachments\n{ filename: "report.pdf",\n  contentType: "application/pdf",\n  size: 2048576 }
+activate API
+
+API -> API : PlanGuard: checkLimit(tenantId, 'attachments')
+
+alt plan limit exceeded
+    API --> Browser : 402 { message: "Plan limit exceeded",\n  resource: "attachments", current: 100, limit: 100,\n  upgradeUrl: "https://app.localhost/billing/upgrade" }
+else within limits
+    API -> MinIO : generatePresignedUrl(\n  method: PUT,\n  bucket: "attachments",\n  key: "{tenantId}/{issueId}/{uuid}-report.pdf",\n  TTL: 60s,\n  contentType: "application/pdf")
+    MinIO --> API : presignedUrl
+
+    API -> DB : INSERT INTO issue_attachments\n{ issue_id, user_id, filename: "report.pdf",\n  url: "attachments/{key}",\n  size: 2048576 }
+    note right of DB : status = PENDING\n(awaiting upload confirm)
+    DB --> API : attachment { id }
+
+    API --> Browser : 200 {\n  uploadUrl: presignedUrl,\n  attachmentId: uuid,\n  fileUrl: "/attachments/{key}"\n}
+end
+
+deactivate API
+
+== Step 2 — Direct Upload (Browser → MinIO) ==
+
+Browser -> MinIO : PUT {presignedUrl}\nContent-Type: application/pdf\nBody: <binary file data>
+note right of Browser #E3F2FD
+    File uploaded DIRECTLY to MinIO.
+    API is not involved — no bandwidth cost.
+end note
+MinIO --> Browser : 200 OK
+
+== Step 3 — Confirm Upload ==
+
+Browser -> API : PATCH /issues/{id}/attachments/{attachmentId}/confirm
+activate API
+
+API -> DB : UPDATE issue_attachments\nSET status = 'READY'\nWHERE id = $attachmentId
+DB --> API : OK
+
+API -> API : EventEmitter.emit('issue.updated',\n{ issueId, attachmentAdded: true })
+
+API --> Browser : 200 { attachment:\n  { id, filename, fileUrl, size } }
+
+deactivate API
+
+@enduml

@@ -1,0 +1,110 @@
+/* apps/web/src/features/search/CommandPalette.module.css */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 120px;
+  animation: fadeIn var(--transition-fast) both;
+}
+
+.panel {
+  width: 100%;
+  max-width: 560px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  animation: scaleIn var(--transition-base) both;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border);
+  gap: 10px;
+}
+
+.searchIcon { color: var(--color-muted); flex-shrink: 0; }
+
+.input {
+  flex: 1;
+  height: 48px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+}
+.input::placeholder { color: var(--color-muted-2); }
+
+.results {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted-2);
+  padding: 6px 10px 2px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.item:hover { background: var(--color-surface); }
+.itemActive { background: var(--color-surface-2); }
+
+.itemIcon { color: var(--color-muted); flex-shrink: 0; }
+.itemTitle { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.itemMeta { font-size: var(--font-size-xs); color: var(--color-muted); }
+
+.empty, .hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 24px;
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  justify-content: center;
+}
+
+.footer {
+  display: flex;
+  gap: 16px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--color-border);
+  font-size: 10px;
+  color: var(--color-muted-2);
+}
+
+kbd {
+  font-family: var(--font-mono);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-right: 3px;
+  font-size: 10px;
+}

@@ -1,0 +1,142 @@
+@startuml 08-component
+' docs/uml/08-component.puml
+' Component diagram — all system components with protocols and network boundaries.
+' Что показывает: все компоненты системы, протоколы взаимодействия и внешние зависимости.
+' Кому полезна: архитекторам, DevOps-инженерам и для security-аудита.
+
+skinparam backgroundColor #FEFEFE
+skinparam component {
+    BackgroundColor #E8EAF6
+    BorderColor #333
+    FontSize 12
+}
+skinparam node {
+    BackgroundColor #F5F5F5
+    BorderColor #666
+}
+skinparam interface {
+    BackgroundColor #FFFDE7
+}
+
+' ─── External Systems ─────────────────────
+
+cloud "External Services" {
+    [SMTP Server\n(Nodemailer)] as SMTP
+    [Google OAuth\n(future)] as OAuth
+}
+
+' ─── Client ───────────────────────────────
+
+node "Client (Browser)" {
+    [React SPA\n(Vite + TS)] as WebApp
+    component "Features" {
+        [KanbanBoard\n(@dnd-kit)] as Kanban
+        [CommandPalette\n(Cmd+K)] as Search
+        [NotificationBell\n(WS + REST)] as Notif
+        [IssueDetailDrawer] as Drawer
+    }
+    [TanStack Query\n(cache + mutations)] as TQ
+    [Socket.IO Client\n(exponential backoff)] as WSClient
+}
+
+WebApp --> TQ : uses
+WebApp --> WSClient : connects
+Kanban --> TQ
+Search --> TQ
+Notif --> TQ
+Notif --> WSClient
+Drawer --> TQ
+
+' ─── Reverse Proxy ────────────────────────
+
+node "Reverse Proxy" {
+    [Traefik v3\n(auto-discovery)] as Traefik
+}
+
+WebApp -down-> Traefik : HTTP REST\n(app.localhost)
+WSClient -down-> Traefik : WebSocket\n(ws://app.localhost/ws)
+
+' ─── Application ──────────────────────────
+
+node "NestJS API (:3000)" {
+    component "Middleware" {
+        [TenantMiddleware\n(JWT → tenant_id)] as TM
+        [JwtAuthGuard\n(global)] as JwtGuard
+        [RolesGuard\n(RBAC)] as RolesG
+    }
+    component "Modules" {
+        [AuthModule\n(login/refresh/logout)] as Auth
+        [ProjectsModule\n(CRUD + board)] as Projects
+        [IssuesModule\n(CRUD + DnD + cursor)] as Issues
+        [SearchModule\n(ts_rank + ILIKE)] as SearchM
+        [NotificationsModule\n(EventEmitter listeners)] as NotifM
+        [TenantsModule] as Tenants
+        [UsersModule] as Users
+        [HealthModule] as Health
+    }
+    component "Infrastructure" {
+        [IssuesGateway\n(Socket.IO server)] as Gateway
+        [PlanLimitsService\n(billing guard)] as Billing
+        [EventEmitter\n(@nestjs/event-emitter)] as EE
+    }
+}
+
+Traefik -down-> TM : HTTP forward\n(api.app.localhost → :3000)
+Traefik -down-> Gateway : WS forward\n(/ws namespace)
+
+TM --> JwtGuard
+JwtGuard --> RolesG
+RolesG --> Auth
+RolesG --> Projects
+RolesG --> Issues
+RolesG --> SearchM
+RolesG --> NotifM
+RolesG --> Tenants
+RolesG --> Users
+RolesG --> Health
+
+Issues --> EE : emit events
+EE --> Gateway : issue.moved, issue.created
+EE --> NotifM : issue.assigned, issue.commented
+NotifM --> Gateway : emitToUser()
+Projects --> Billing : <<include>> PlanGuard
+Issues --> Billing : <<include>> PlanGuard
+Users --> Billing : <<include>> PlanGuard
+
+' ─── Data Layer ───────────────────────────
+
+database "PostgreSQL 16\n(:5432)" as PG {
+    [RLS Policies\n(tenant isolation)] as RLS
+    [tsvector Index\n(full-text search)] as FTS
+    [12 Tables\n(see ERD)] as Tables
+}
+
+database "Redis 7\n(:6379)" as Redis {
+    [Refresh Tokens\n(refresh:{userId}:{tokenId})] as RT
+    [Plan Limit Cache\n(plan:count:{tenantId}:{res})] as PLC
+    [Recent Views\n(user:recent:{userId})] as RV
+    [Tenant Cache\n(tenant:slug:{slug})] as TC
+}
+
+storage "MinIO\n(:9000 / :9001)" as MinIO {
+    [attachments bucket] as AttBucket
+    [avatars bucket] as AvBucket
+}
+
+Auth -down-> PG : TypeORM
+Projects -down-> PG : TypeORM
+Issues -down-> PG : TypeORM
+SearchM -down-> PG : TypeORM\n(search_vector @@)
+NotifM -down-> PG : TypeORM
+
+Auth -down-> Redis : ioredis\n(refresh tokens)
+SearchM -down-> Redis : ioredis\n(recent views)
+Billing -down-> Redis : ioredis\n(cached counts)
+Tenants -down-> Redis : ioredis\n(slug cache)
+
+Issues -down-> MinIO : MinIO SDK\n(presigned URLs)
+Users -down-> MinIO : MinIO SDK\n(avatar presign)
+
+NotifM -right-> SMTP : Nodemailer\n(SMTP/TLS)
+
+@enduml

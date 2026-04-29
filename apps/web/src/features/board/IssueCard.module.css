@@ -1,0 +1,92 @@
+/* apps/web/src/features/board/IssueCard.module.css */
+
+.card {
+  position: relative;
+  display: flex;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+  user-select: none;
+}
+.card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border-2);
+}
+
+.overlay {
+  pointer-events: none;
+}
+
+.priorityBar {
+  width: 3px;
+  flex-shrink: 0;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  font-weight: 500;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: nowrap;
+}
+
+.issueId {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 10px;
+  color: var(--color-muted-2);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.points {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+  flex-shrink: 0;
+}
+
+.spacer { flex: 1; }
+
+.unassigned {
+  color: var(--color-muted-2);
+  display: flex;
+}
