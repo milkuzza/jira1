@@ -1,5 +1,5 @@
 -- ============================================================
--- Jira-like SaaS — Database Schema (Iteration 1)
+-- TaskHub SaaS — Database Schema (Iteration 1)
 -- PostgreSQL 16
 -- ============================================================
 

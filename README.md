@@ -1,6 +1,6 @@
-# Jira Clone — Task Management SaaS
+# TaskHub — Task Management SaaS
 
-Self-hosted, Jira-like task management system. Monorepo with NestJS API, React frontend, shared TypeScript types.
+Self-hosted TaskHub task management system. Monorepo with NestJS API, React frontend, shared TypeScript types.
 
 ## Quick Start
 
