@@ -26,8 +26,8 @@ export const HEALTH_CHECK_QUERY = 'SELECT 1';
 
 /** Swagger document configuration */
 export const SWAGGER_CONFIG = {
-  TITLE: 'Jira Clone API',
-  DESCRIPTION: 'API documentation for the Jira-like SaaS task management system',
+  TITLE: 'TaskHub API',
+  DESCRIPTION: 'API documentation for the TaskHub SaaS task management system',
   VERSION: '0.1.0',
   PATH: 'api/docs',
 } as const;
